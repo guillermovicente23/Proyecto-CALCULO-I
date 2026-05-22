@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistemas Límite - Calculadora Numérica de Ingeniería</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <style>
+        /* Paleta de colores estilo terminal / ingeniería en sistemas */
+        :root {
+            --bg-principal: #0d1117;       /* Fondo oscuro tipo GitHub / VS Code */
+            --bg-tarjeta: #161b22;         /* Contenedor ligeramente más claro */
+            --texto-principal: #c9d1d9;    /* Gris claro para lectura óptima */
+            --texto-azul: #58a6ff;         /* Azul clásico de desarrollo/links */
+            --acento-neon: #58fff5;        /* Cian neón para resaltar elementos clave */
+            --acento-magenta: #ff007f;     /* Magenta para contrastes de sistema */
+            --borde-terminal: #30363d;     /* Bordes grises de componentes */
+            --fuente-codigo: 'Consolas', 'Courier New', Courier, monospace;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background-color: var(--bg-principal);
+            color: var(--texto-principal);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 850px;
+            width: 100%;
+            background-color: var(--bg-tarjeta);
+            padding: 35px;
+            border-radius: 12px;
+            border: 2px solid var(--borde-terminal);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        /* Línea decorativa superior estilo consola de ingeniería */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--texto-azul), var(--acento-neon));
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--acento-neon);
+            font-family: var(--fuente-codigo);
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-size: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #8b949e;
+            font-size: 0.95rem;
+            margin-bottom: 35px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 600px) {
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--texto-azul);
+            font-family: var(--fuente-codigo);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background-color: #0d1117;
+            border: 2px solid var(--borde-terminal);
+            border-radius: 6px;
+            color: #f0f6fc;
+            font-size: 16px;
+            box-sizing: border-box;
+            font-family: var(--fuente-codigo);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--acento-neon);
+            box-shadow: 0 0 8px rgba(88, 255, 245, 0.2);
+        }
+
+        button {
+            width: 100%;
+            background: linear-gradient(135deg, var(--texto-azul) 0%, #1f6feb 100%);
+            color: #ffffff;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--fuente-codigo);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: opacity 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            box-shadow: 0 0 15px rgba(88, 166, 255, 0.4);
+            opacity: 0.95;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(88, 166, 255, 0.05);
+            border: 2px solid var(--texto-azul);
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--acento-neon);
+            text-align: center;
+            font-family: var(--fuente-codigo);
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 35px;
+        }
+
+        .table-container h3 {
+            color: #8b949e;
+            font-family: var(--fuente-codigo);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--borde-terminal);
+            padding-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            margin-top: 10px;
+            background-color: #0d1117;
+            border: 2px solid var(--borde-terminal);
+        }
+
+        th, td {
+            padding: 14px;
+            border: 1px solid var(--borde-terminal);
+            font-size: 0.95rem;
+        }
+
+        th {
+            background-color: #161b22;
+            color: var(--texto-azul);
+            font-family: var(--fuente-codigo);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        /* Destacar la columna central (Punto 4) con Magenta */
+        .highlight {
+            background-color: rgba(255, 0, 127, 0.08) !important;
+            border: 2px solid var(--acento-magenta) !important;
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .var-name {
+            color: var(--acento-neon);
+            font-family: var(--fuente-codigo);
+        }
+
+        .error {
+            color: #ff7b72;
+            background: rgba(248, 81, 73, 0.05);
+            border: 2px solid #f85149;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>[ LÍMITE_SISTEMAS ]</h1>
+    <div class="subtitle">Módulo de Aproximación Numérica • Ingeniería en Sistemas</div>
+    
+    <div class="input-group">
+        <div>
+            <label for="functionInput">Función Analítica f(x):</label>
+            <input type="text" id="functionInput" placeholder="Ej: (x - 2) / (x^2 - 4)">
+        </div>
+        <div>
+            <label for="targetInput">Evaluar x → :</label>
+            <input type="number" id="targetInput" step="any" placeholder="Ej: 2">
+        </div>
+    </div>
+
+    <button onclick="calcularLimite()">EJECUTAR_PROCESAMIENTO_</button>
+
+    <div id="errorMessage" class="result-box error" style="display: none;"></div>
+    
+    <div id="resultMessage" class="result-box" style="display: none;"></div>
+
+    <div class="table-container" id="tableContainer" style="display: none;">
+        <h3>Matriz_Aproximación::Resultados_Output</h3>
+        <table id="limiteTabla">
+            <thead>
+                <tr id="headerRow"></tr>
+            </thead>
+            <tbody>
+                <tr id="xRow"></tr>
+                <tr id="fxRow"></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function calcularLimite() {
+        const functionStr = document.getElementById('functionInput').value;
+        const targetVal = parseFloat(document.getElementById('targetInput').value);
+        
+        const errorDiv = document.getElementById('errorMessage');
+        const resultDiv = document.getElementById('resultMessage');
+        const tableContainer = document.getElementById('tableContainer');
+        
+        errorDiv.style.display = 'none';
+        resultDiv.style.display = 'none';
+        tableContainer.style.display = 'none';
+
+        if (!functionStr || isNaN(targetVal)) {
+            showError("ERROR_CODE_01: Datos de entrada faltantes o inválidos.");
+            return;
+        }
+
+        try {
+            const parser = math.parser();
+            parser.evaluate(`f(x) = ${functionStr}`);
+            
+            const deltas = [-0.1, -0.01, -0.001, 0, 0.001, 0.01, 0.1];
+            const xValues = [];
+            const fxValues = [];
+
+            deltas.forEach(delta => {
+                let xVal = math.round(targetVal + delta, 4);
+                xValues.push(xVal);
+
+                if (delta === 0) {
+                    try {
+                        let res = parser.evaluate(`f(${xVal})`);
+                        if (typeof res === 'number' && !isNaN(res) && isFinite(res)) {
+                            fxValues.push(math.round(res, 5));
+                        } else {
+                            fxValues.push("Indef.");
+                        }
+                    } catch (e) {
+                        fxValues.push("Indef.");
+                    }
+                } else {
+                    let res = parser.evaluate(`f(${xVal})`);
+                    if (typeof res === 'number' && !isNaN(res)) {
+                        fxValues.push(math.round(res, 5));
+                    } else {
+                        fxValues.push("Error");
+                    }
+                }
+            });
+
+            renderTable(xValues, fxValues);
+
+            const izqY = fxValues[2];
+            const derY = fxValues[4];
+            
+            if (typeof izqY === 'number' && typeof derY === 'number') {
+                let limiteEstimado = math.round((izqY + derY) / 2, 4);
+                resultDiv.innerHTML = `CONVERGENCIA_EXITOSA: L ≈ ${limiteEstimado}`;
+                resultDiv.style.display = 'block';
+            } else {
+                resultDiv.innerHTML = `AVISO: El límite es divergente o presenta una indeterminación compleja.`;
+                resultDiv.style.display = 'block';
+            }
+
+        } catch (error) {
+            showError("ERROR_SINTAXIS: Expresión no reconocible. Asegúrate de usar operadores como *, /, ^ correctamente.");
+        }
+    }
+
+    function renderTable(xValues, fxValues) {
+        const headerRow = document.getElementById('headerRow');
+        const xRow = document.getElementById('xRow');
+        const fxRow = document.getElementById('fxRow');
+
+        headerRow.innerHTML = '<th>Variable</th>';
+        xRow.innerHTML = '<td><b class="var-name">x</b></td>';
+        fxRow.innerHTML = '<td><b class="var-name">f(x)</b></td>';
+
+        for (let i = 0; i < xValues.length; i++) {
+            headerRow.innerHTML += `<th>Punto ${i+1}</th>`;
+            let claseResaltado = (i === 3) ? 'class="highlight"' : '';
+            xRow.innerHTML += `<td ${claseResaltado}>${xValues[i]}</td>`;
+            fxRow.innerHTML += `<td ${claseResaltado}>${fxValues[i]}</td>`;
+        }
+
+        document.getElementById('tableContainer').style.display = 'block';
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.innerText = msg;
+        errorDiv.style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
